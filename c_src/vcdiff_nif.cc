@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2013 Jachym Holecek <freza@circlewave.net>
- * Copyright (c) 2014 Jihyun Yu <yjh0502@gmail.com>
+ * Copyright (c) 2016 Jihyun Yu <yjh0502@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,30 +27,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <string>
+#include <cstring>
+
 #include <erl_nif.h>
 #include <google/vcencoder.h>
-#include <string>
-#include <string.h>
-
-/*
- * Type name normalization, utility macros.
- */
-
-typedef unsigned int         uint_t;
-typedef unsigned long         ulong_t;
-typedef ErlNifEnv         nif_heap_t;
-typedef ERL_NIF_TERM         nif_term_t;
-typedef ErlNifFunc         nif_func_t;
-typedef ErlNifMutex         nif_lock_t;
-typedef ErlNifCond         nif_cond_t;
-typedef ErlNifResourceType     nif_type_t;
-typedef ErlNifBinary         nif_bin_t;
-typedef ErlNifTid         nif_tid_t;
-typedef ErlNifPid         nif_pid_t;
 
 #define BADARG             enif_make_badarg(env)
 
-static nif_term_t
+static ERL_NIF_TERM
 vcdiff_encode(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     ErlNifBinary dic, target, encoded;
@@ -81,12 +65,12 @@ vcdiff_encode(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 }
 
 static int
-vcdiff_load(nif_heap_t *env, void **priv_data, nif_term_t load_info)
+vcdiff_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
 {
     return 0;
 }
 
-static nif_func_t vcdiff_exports[] = {
+static ErlNifFunc vcdiff_exports[] = {
     {"vcdiff_encode", 2, vcdiff_encode},
 };
 
