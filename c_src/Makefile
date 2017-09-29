@@ -33,21 +33,17 @@ else ifeq ($(UNAME_SYS), Linux)
 endif
 
 CFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
-CXXFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR) -I $(BASEDIR)/xdelta3_install/include/
+CXXFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR) -I /home/user/erlang/faceit/xdelta2/xdelta3
+# hacks
+CXXFLAGS += -Wwrite-strings -Wliteral-suffix
+#-I $(BASEDIR)/xdelta/xdelta3/
 
 LDLIBS += -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei -lstdc++ \
-		  -L $(BASEDIR)/xdelta3_install/lib/ \
-		  -l:libvcdcom.a \
-		  -l:libvcddec.a \
-		  -l:libvcdenc.a
+ 	  -L /home/user/erlang/faceit/xdelta2/xdelta3
+#	  -L $(BASEDIR)/xdelta/xdelta3/
 
 LDFLAGS += -shared -rdynamic
-# Link xdelta3 library statically
-LDFLAGS += -Wl,--whole-archive \
-		   $(BASEDIR)/xdelta3_install/lib/libvcdcom.a \
-		   $(BASEDIR)/xdelta3_install/lib/libvcdenc.a \
-		   $(BASEDIR)/xdelta3_install/lib/libvcddec.a \
-		   -Wl,--no-whole-archive
+
 
 # Verbosity.
 
@@ -66,36 +62,39 @@ OBJECTS = $(addsuffix .o, $(basename $(SOURCES)))
 COMPILE_C = $(c_verbose) $(CC) $(CFLAGS) $(CPPFLAGS) -c
 COMPILE_CPP = $(cpp_verbose) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c
 
-$(C_SRC_OUTPUT): $(BASEDIR)/xdelta3_install $(OBJECTS)
+# $(BASEDIR)/xdelta/xdelta3/build
+$(C_SRC_OUTPUT):  $(OBJECTS)
 	@mkdir -p $(BASEDIR)/priv/
-	$(link_verbose) $(CC) $(OBJECTS) $(LDFLAGS) $(LDLIBS) -o $(C_SRC_OUTPUT)
+	$(link_verbose) $(CC) $(OBJECTS) \
+		-DXD3_MAIN=0 \
+        $(BASEDIR)/../xdelta2/xdelta3/xdelta3-xdelta3.o \
+		$(LDFLAGS) $(LDLIBS) -o $(C_SRC_OUTPUT)
 
-$(BASEDIR)/priv/libvcdenc.so.0:
-	@mkdir -p $(BASEDIR)/priv/
-	cp $(wildcard $(BASEDIR)/xdelta3_install/lib/*) $(BASEDIR)/priv/
+##      $(BASEDIR)/xdelta/xdelta3/xdelta3-xdelta3.o \
 
-$(BASEDIR)/open-xdelta3:
+$(BASEDIR)/xdelta:
 	cd $(BASEDIR) \
-		&& git clone "git://github.com/google/open-xdelta3.git"
-	cd $(BASEDIR)/open-xdelta3 \
-		&& git submodule update --init --recursive
+	    && git clone "git://github.com/arcusfelis/xdelta.git"
 
-$(BASEDIR)/xdelta3_build:
-	mkdir -p $(BASEDIR)/xdelta3_build
+$(BASEDIR)/xdelta/xdelta3/build: $(BASEDIR)/xdelta
+	cd $(BASEDIR)/xdelta/xdelta3/ \
+      && ./generate_build_files.sh
+	mkdir -p $(BASEDIR)/xdelta/xdelta3/build
+	cd $(BASEDIR)/xdelta/xdelta3/ \
+	  && ./configure \
+	  	--disable-dependency-tracking \
+		"CXXFLAGS=-fPIC " \
+		"CFLAGS=-fPIC " \
+		--enable-static \
+		--disable-shared \
+		--with-liblzma=no \
+		--prefix=$(pwd)/build
+	# Something is wrong with the asserts:
+	# define error: expected declaration specifiers or ‘...’ before numeric constant
+	sed -i '/static_assert/d' $(BASEDIR)/xdelta/xdelta3/xdelta3.h
+	cd $(BASEDIR)/xdelta/xdelta3/ \
+	  && make
 
-$(BASEDIR)/xdelta3_build/Makefile: $(BASEDIR)/xdelta3_build $(BASEDIR)/open-xdelta3
-	cat $(BASEDIR)/open-xdelta3/CMakeLists.txt > $(BASEDIR)/open-xdelta3/CMakeLists.txt.tmp
-	echo "set(CMAKE_POSITION_INDEPENDENT_CODE ON)" > $(BASEDIR)/open-xdelta3/CMakeLists.txt
-	cat $(BASEDIR)/open-xdelta3/CMakeLists.txt.tmp >> $(BASEDIR)/open-xdelta3/CMakeLists.txt
-	rm $(BASEDIR)/open-xdelta3/CMakeLists.txt.tmp
-	cd $(BASEDIR)/xdelta3_build && cmake  \
-		-DCMAKE_INSTALL_PREFIX=$(BASEDIR)/xdelta3_install \
-		-DBUILD_STATIC_LIBS=ON \
-		-Dxdelta3_build_test=OFF \
-	   	-Dxdelta3_build_exec=OFF ../open-xdelta3
-
-$(BASEDIR)/xdelta3_install: $(BASEDIR)/xdelta3_build/Makefile
-	cd $(BASEDIR)/xdelta3_build && make && make install
 
 %.o: %.c
 	$(COMPILE_C) $(OUTPUT_OPTION) $<
