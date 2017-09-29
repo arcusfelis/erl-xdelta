@@ -17,3 +17,7 @@ _plugins
 _tdeps
 logs
 _build
+open-vcdiff/
+priv/
+vcdiff_build/
+vcdiff_install/
