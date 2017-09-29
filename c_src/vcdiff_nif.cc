@@ -53,7 +53,8 @@ vcdiff_encode(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
     std::string output;
     open_vcdiff::VCDiffEncoder encoder((char *)dic.data, dic.size);
-    encoder.SetFormatFlags(open_vcdiff::VCD_FORMAT_INTERLEAVED | open_vcdiff::VCD_FORMAT_CHECKSUM);
+//  encoder.SetFormatFlags(open_vcdiff::VCD_FORMAT_INTERLEAVED | open_vcdiff::VCD_FORMAT_CHECKSUM);
+    encoder.SetTargetMatching(false);
     encoder.Encode((char *)target.data, target.size, &output);
 
     if (!enif_alloc_binary(output.size(), &encoded)) {
