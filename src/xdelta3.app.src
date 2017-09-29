@@ -1,4 +1,4 @@
-{application, 'vcdiff',
+{application, 'xdelta3',
  [{description, "An OTP library"},
   {vsn, "0.1.0"},
   {registered, []},

@@ -25,14 +25,14 @@
 %%% ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 %%% POSSIBILITY OF SUCH DAMAGE.
 
--module(vcdiff_nif).
+-module(xdelta3_nif).
 
 -on_load(init/0).
 
--define(APPNAME, vcdiff).
--define(LIBNAME, vcdiff).
+-define(APPNAME, xdelta3).
+-define(LIBNAME, xdelta3).
 
--export([vcdiff_encode/2]).
+-export([xdelta3_encode/2]).
 
 %%%
 init() ->
@@ -49,8 +49,8 @@ init() ->
     end,
     erlang:load_nif(SoName, 0).
 
-%%% Exported from vcdiff_nif.c.
+%%% Exported from xdelta3_nif.c.
 
-vcdiff_encode(_Dic, _Data) ->
+xdelta3_encode(_Dic, _Data) ->
     erlang:nif_error(not_loaded).
 

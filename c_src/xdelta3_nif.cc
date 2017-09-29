@@ -27,16 +27,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <string>
-#include <cstring>
-
 #include <erl_nif.h>
-#include <google/vcencoder.h>
+#include <xdelta3.h>
 
 #define BADARG             enif_make_badarg(env)
 
 static ERL_NIF_TERM
-vcdiff_encode(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+xdelta3_encode(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     ErlNifBinary dic, target, encoded;
 
@@ -51,28 +48,44 @@ vcdiff_encode(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         return (BADARG);
     }
 
-    std::string output;
-    open_vcdiff::VCDiffEncoder encoder((char *)dic.data, dic.size);
-//  encoder.SetFormatFlags(open_vcdiff::VCD_FORMAT_INTERLEAVED | open_vcdiff::VCD_FORMAT_CHECKSUM);
-    encoder.SetTargetMatching(false);
-    encoder.Encode((char *)target.data, target.size, &output);
+    uint8_t *from_buf = NULL, *to_buf = NULL, *delta_buf = NULL;
+    size_t from_len = 0, to_len, delta_alloc, delta_size = 0;
+    from_buf = (uint8_t*) dic.data;
+    from_len = (size_t)   dic.size;
 
-    if (!enif_alloc_binary(output.size(), &encoded)) {
+    to_buf = (uint8_t*) target.data;
+    to_len = (size_t)   target.size;
+
+    delta_alloc = to_len * 11 / 10;
+
+    if (!enif_alloc_binary(delta_alloc, &encoded)) {
         return (BADARG);
     }
-    memcpy(encoded.data, &output[0], output.size());
+    delta_buf = (uint8_t*) encoded.data;
 
+    int ret = xd3_encode_memory(to_buf, to_len, from_buf, from_len,
+                    delta_buf, &delta_size, delta_alloc, flags);
+    if (ret != 0) {
+      enif_release_binary(encoded);
+      // xd3_strerror(ret)
+      return (BADARG);
+    }
+
+    if (!enif_realloc_binary(&encoded, delta_size)) {
+        enif_release_binary(encoded);
+        return (BADARG);
+    }
     return enif_make_binary(env, &encoded);
 }
 
 static int
-vcdiff_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
+xdelta3_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
 {
     return 0;
 }
 
-static ErlNifFunc vcdiff_exports[] = {
-    {"vcdiff_encode", 2, vcdiff_encode},
+static ErlNifFunc xdelta3_exports[] = {
+    {"xdelta3_encode", 2, xdelta3_encode},
 };
 
-ERL_NIF_INIT(vcdiff_nif, vcdiff_exports, vcdiff_load, NULL, NULL, NULL)
+ERL_NIF_INIT(xdelta3_nif, xdelta3_exports, xdelta3_load, NULL, NULL, NULL)

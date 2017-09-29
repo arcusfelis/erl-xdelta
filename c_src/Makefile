@@ -33,20 +33,20 @@ else ifeq ($(UNAME_SYS), Linux)
 endif
 
 CFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
-CXXFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR) -I $(BASEDIR)/vcdiff_install/include/
+CXXFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR) -I $(BASEDIR)/xdelta3_install/include/
 
 LDLIBS += -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei -lstdc++ \
-		  -L $(BASEDIR)/vcdiff_install/lib/ \
+		  -L $(BASEDIR)/xdelta3_install/lib/ \
 		  -l:libvcdcom.a \
 		  -l:libvcddec.a \
 		  -l:libvcdenc.a
 
 LDFLAGS += -shared -rdynamic
-# Link vcdiff library statically
+# Link xdelta3 library statically
 LDFLAGS += -Wl,--whole-archive \
-		   $(BASEDIR)/vcdiff_install/lib/libvcdcom.a \
-		   $(BASEDIR)/vcdiff_install/lib/libvcdenc.a \
-		   $(BASEDIR)/vcdiff_install/lib/libvcddec.a \
+		   $(BASEDIR)/xdelta3_install/lib/libvcdcom.a \
+		   $(BASEDIR)/xdelta3_install/lib/libvcdenc.a \
+		   $(BASEDIR)/xdelta3_install/lib/libvcddec.a \
 		   -Wl,--no-whole-archive
 
 # Verbosity.
@@ -66,36 +66,36 @@ OBJECTS = $(addsuffix .o, $(basename $(SOURCES)))
 COMPILE_C = $(c_verbose) $(CC) $(CFLAGS) $(CPPFLAGS) -c
 COMPILE_CPP = $(cpp_verbose) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c
 
-$(C_SRC_OUTPUT): $(BASEDIR)/vcdiff_install $(OBJECTS)
+$(C_SRC_OUTPUT): $(BASEDIR)/xdelta3_install $(OBJECTS)
 	@mkdir -p $(BASEDIR)/priv/
 	$(link_verbose) $(CC) $(OBJECTS) $(LDFLAGS) $(LDLIBS) -o $(C_SRC_OUTPUT)
 
 $(BASEDIR)/priv/libvcdenc.so.0:
 	@mkdir -p $(BASEDIR)/priv/
-	cp $(wildcard $(BASEDIR)/vcdiff_install/lib/*) $(BASEDIR)/priv/
+	cp $(wildcard $(BASEDIR)/xdelta3_install/lib/*) $(BASEDIR)/priv/
 
-$(BASEDIR)/open-vcdiff:
+$(BASEDIR)/open-xdelta3:
 	cd $(BASEDIR) \
-		&& git clone "git://github.com/google/open-vcdiff.git"
-	cd $(BASEDIR)/open-vcdiff \
+		&& git clone "git://github.com/google/open-xdelta3.git"
+	cd $(BASEDIR)/open-xdelta3 \
 		&& git submodule update --init --recursive
 
-$(BASEDIR)/vcdiff_build:
-	mkdir -p $(BASEDIR)/vcdiff_build
+$(BASEDIR)/xdelta3_build:
+	mkdir -p $(BASEDIR)/xdelta3_build
 
-$(BASEDIR)/vcdiff_build/Makefile: $(BASEDIR)/vcdiff_build $(BASEDIR)/open-vcdiff
-	cat $(BASEDIR)/open-vcdiff/CMakeLists.txt > $(BASEDIR)/open-vcdiff/CMakeLists.txt.tmp
-	echo "set(CMAKE_POSITION_INDEPENDENT_CODE ON)" > $(BASEDIR)/open-vcdiff/CMakeLists.txt
-	cat $(BASEDIR)/open-vcdiff/CMakeLists.txt.tmp >> $(BASEDIR)/open-vcdiff/CMakeLists.txt
-	rm $(BASEDIR)/open-vcdiff/CMakeLists.txt.tmp
-	cd $(BASEDIR)/vcdiff_build && cmake  \
-		-DCMAKE_INSTALL_PREFIX=$(BASEDIR)/vcdiff_install \
+$(BASEDIR)/xdelta3_build/Makefile: $(BASEDIR)/xdelta3_build $(BASEDIR)/open-xdelta3
+	cat $(BASEDIR)/open-xdelta3/CMakeLists.txt > $(BASEDIR)/open-xdelta3/CMakeLists.txt.tmp
+	echo "set(CMAKE_POSITION_INDEPENDENT_CODE ON)" > $(BASEDIR)/open-xdelta3/CMakeLists.txt
+	cat $(BASEDIR)/open-xdelta3/CMakeLists.txt.tmp >> $(BASEDIR)/open-xdelta3/CMakeLists.txt
+	rm $(BASEDIR)/open-xdelta3/CMakeLists.txt.tmp
+	cd $(BASEDIR)/xdelta3_build && cmake  \
+		-DCMAKE_INSTALL_PREFIX=$(BASEDIR)/xdelta3_install \
 		-DBUILD_STATIC_LIBS=ON \
-		-Dvcdiff_build_test=OFF \
-	   	-Dvcdiff_build_exec=OFF ../open-vcdiff
+		-Dxdelta3_build_test=OFF \
+	   	-Dxdelta3_build_exec=OFF ../open-xdelta3
 
-$(BASEDIR)/vcdiff_install: $(BASEDIR)/vcdiff_build/Makefile
-	cd $(BASEDIR)/vcdiff_build && make && make install
+$(BASEDIR)/xdelta3_install: $(BASEDIR)/xdelta3_build/Makefile
+	cd $(BASEDIR)/xdelta3_build && make && make install
 
 %.o: %.c
 	$(COMPILE_C) $(OUTPUT_OPTION) $<
@@ -111,4 +111,4 @@ $(BASEDIR)/vcdiff_install: $(BASEDIR)/vcdiff_build/Makefile
 
 clean:
 	@rm -f $(C_SRC_OUTPUT) $(OBJECTS)
-	@rm -rf "$(BASEDIR)/open-vcdiff" "$(BASEDIR)/vcdiff_build" "$(BASEDIR)/vcdiff_install"
+	@rm -rf "$(BASEDIR)/open-xdelta3" "$(BASEDIR)/xdelta3_build" "$(BASEDIR)/xdelta3_install"
