@@ -33,7 +33,7 @@
 -define(LIBNAME, xdelta3).
 
 -export([xdelta3_encode/2]).
--export([xdelta3_merge/2]).
+-export([xdelta3_merge/1]).
 
 %%%
 init() ->
@@ -55,6 +55,6 @@ init() ->
 xdelta3_encode(_Dic, _Data) ->
     erlang:nif_error(not_loaded).
 
-xdelta3_merge(_delta1, _delta2) ->
+xdelta3_merge(_deltas) ->
     erlang:nif_error(not_loaded).
 

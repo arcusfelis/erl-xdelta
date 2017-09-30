@@ -99,20 +99,11 @@ xdelta3_encode(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 static ERL_NIF_TERM
 xdelta3_merge(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-    ErlNifBinary delta1, delta2;
-
-    if (argc != 2) {
+    if (argc != 1) {
         return (BADARG);
     }
 
-    if (!enif_inspect_binary(env, argv[0], &delta1)) {
-        return (BADARG);
-    }
-    if (!enif_inspect_binary(env, argv[1], &delta2)) {
-        return (BADARG);
-    }
-
-    xd3_main_cmdline ();
+    return xd3_merge(env, argv[0]);
 
 }
 
@@ -124,7 +115,7 @@ xdelta3_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
 
 static ErlNifFunc xdelta3_exports[] = {
     {"xdelta3_encode", 2, xdelta3_encode},
-    {"xdelta3_merge", 2, xdelta3_merge},
+    {"xdelta3_merge", 1, xdelta3_merge},
 };
 
 ERL_NIF_INIT(xdelta3_nif, xdelta3_exports, xdelta3_load, NULL, NULL, NULL)
