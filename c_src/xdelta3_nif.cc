@@ -36,6 +36,7 @@ extern "C"
 {
 #include "xdelta3.h"
 #include "xdelta3-internal.h"
+#include "xdelta3-merger.h"
 }
 
 //#include "xdelta3-decode.h"
@@ -99,7 +100,7 @@ xdelta3_encode(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM xd3_merge (ErlNifEnv* env, ERL_NIF_TERM merge_terms)
 {
     unsigned merge_terms_length;
-    int err = 0;
+    unsigned int err = 0;
     xd3_merger* merger;
 
     if (!enif_get_list_length(env, merge_terms, &merge_terms_length))
@@ -124,7 +125,7 @@ ERL_NIF_TERM xd3_merge (ErlNifEnv* env, ERL_NIF_TERM merge_terms)
             err = 1;
             break;
         }
-        err = xd3_merger_add_input(merger, bin.data, bin.size);
+        err = xd3_merger_add_input(merger, (char*) bin.data, bin.size);
         if (err)
             break;
         merge_terms = tail;
