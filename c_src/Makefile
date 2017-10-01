@@ -33,14 +33,12 @@ else ifeq ($(UNAME_SYS), Linux)
 endif
 
 CFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
-CXXFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR) -I /home/user/erlang/faceit/xdelta2/xdelta3
+CXXFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR) -I $(BASEDIR)/xdelta/xdelta3/
 # hacks
 CXXFLAGS += -Wwrite-strings -Wliteral-suffix
-#-I $(BASEDIR)/xdelta/xdelta3/
 
 LDLIBS += -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei -lstdc++ \
- 	  -L /home/user/erlang/faceit/xdelta2/xdelta3
-#	  -L $(BASEDIR)/xdelta/xdelta3/
+ 	  -L $(BASEDIR)/xdelta/xdelta3/
 
 LDFLAGS += -shared -rdynamic
 
@@ -62,19 +60,19 @@ OBJECTS = $(addsuffix .o, $(basename $(SOURCES)))
 COMPILE_C = $(c_verbose) $(CC) $(CFLAGS) $(CPPFLAGS) -c
 COMPILE_CPP = $(cpp_verbose) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c
 
-# $(BASEDIR)/xdelta/xdelta3/build
-$(C_SRC_OUTPUT):  $(OBJECTS)
+$(C_SRC_OUTPUT):  $(BASEDIR)/xdelta/xdelta3/build $(OBJECTS)
 	@mkdir -p $(BASEDIR)/priv/
 	$(link_verbose) $(CC) $(OBJECTS) \
 		-DXD3_MAIN=0 \
-        $(BASEDIR)/../xdelta2/xdelta3/xdelta3-xdelta3.o \
+        $(BASEDIR)/xdelta/xdelta3/xdelta3-xdelta3.o \
 		$(LDFLAGS) $(LDLIBS) -o $(C_SRC_OUTPUT)
 
-##      $(BASEDIR)/xdelta/xdelta3/xdelta3-xdelta3.o \
 
 $(BASEDIR)/xdelta:
 	cd $(BASEDIR) \
-	    && git clone "git://github.com/arcusfelis/xdelta.git"
+	    && git clone "git://github.com/arcusfelis/xdelta.git" \
+		&& cd xdelta \
+	    && git checkout merger
 
 $(BASEDIR)/xdelta/xdelta3/build: $(BASEDIR)/xdelta
 	cd $(BASEDIR)/xdelta/xdelta3/ \

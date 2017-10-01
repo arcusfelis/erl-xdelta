@@ -46,6 +46,8 @@ extern "C"
 
 #define BADARG             enif_make_badarg(env)
 
+ERL_NIF_TERM make_error_term(ErlNifEnv *env, int ret);
+
 static ERL_NIF_TERM
 xdelta3_encode(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -74,7 +76,7 @@ xdelta3_encode(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     to_buf = (uint8_t*) target.data;
     to_len = (size_t)   target.size;
 
-    delta_alloc = to_len * 11 / 10;
+    delta_alloc = to_len * 11 / 10 + 10000;
 
     if (!enif_alloc_binary(delta_alloc, &encoded)) {
         return (BADARG);
@@ -94,6 +96,70 @@ xdelta3_encode(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         return (BADARG);
     }
     return enif_make_binary(env, &encoded);
+}
+
+static ERL_NIF_TERM
+xdelta3_decode(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary source, delta, encoded;
+
+    if (argc != 2) {
+        return (BADARG);
+    }
+
+    if (!enif_inspect_binary(env, argv[0], &source)) {
+        return (BADARG);
+    }
+    if (!enif_inspect_binary(env, argv[1], &delta)) {
+        return (BADARG);
+    }
+
+    uint8_t *from_buf = NULL, *input_buf = NULL, *output_buf = NULL;
+    size_t from_len = 0, input_len, output_alloc, output_size = 0;
+    int flags;
+    flags = 0;
+    from_buf = (uint8_t*) source.data;
+    from_len = (size_t)   source.size;
+
+    input_buf = (uint8_t*) delta.data;
+    input_len = (size_t)   delta.size;
+
+    output_alloc = (input_len + from_len) * 11 / 10 + 10000;
+
+    if (!enif_alloc_binary(output_alloc, &encoded)) {
+        return (BADARG);
+    }
+    output_buf = (uint8_t*) encoded.data;
+
+    int ret = xd3_decode_memory(input_buf, input_len, from_buf, from_len,
+                    output_buf, &output_size, output_alloc, flags);
+    if (ret != 0) {
+      enif_release_binary(&encoded);
+
+      return enif_raise_exception(env, make_error_term(env, ret));
+    }
+
+    if (!enif_realloc_binary(&encoded, output_size)) {
+        enif_release_binary(&encoded);
+        return (BADARG);
+    }
+    return enif_make_binary(env, &encoded);
+}
+
+
+ERL_NIF_TERM make_error_term(ErlNifEnv *env, int ret)
+{
+    ErlNifBinary bin;
+    const char* err_description = xd3_strerror(ret);
+    unsigned err_description_length = strlen(err_description);
+
+    if (!enif_alloc_binary(err_description_length, &bin)) {
+        return (BADARG);
+    }
+
+    memcpy(bin.data, err_description, err_description_length);
+
+    return enif_make_binary(env, &bin);
 }
 
 
@@ -179,6 +245,7 @@ xdelta3_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
 
 static ErlNifFunc xdelta3_exports[] = {
     {"xdelta3_encode", 2, xdelta3_encode},
+    {"xdelta3_decode", 2, xdelta3_decode},
     {"xdelta3_merge", 1, xdelta3_merge},
 };
 
