@@ -96,6 +96,69 @@ xdelta3_encode(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 }
 
 
+ERL_NIF_TERM xd3_merge (ErlNifEnv* env, ERL_NIF_TERM merge_terms)
+{
+    unsigned merge_terms_length;
+    int err = 0;
+    xd3_merger* merger;
+
+    if (!enif_get_list_length(env, merge_terms, &merge_terms_length))
+       return enif_make_badarg(env);
+
+    if (merge_terms_length < 2)
+       return enif_make_badarg(env);
+
+    merger = xd3_merger_init();
+    if (!merger)
+       return enif_make_badarg(env);
+
+    ERL_NIF_TERM head;
+    ERL_NIF_TERM tail;
+    ErlNifBinary bin;
+    for (unsigned i = 0; i < merge_terms_length; i++)
+    {
+        enif_get_list_cell(env, merge_terms, &head, &tail);
+
+        if (!enif_inspect_binary(env, head, &bin))
+        {
+            err = 1;
+            break;
+        }
+        err = xd3_merger_add_input(merger, bin.data, bin.size);
+        if (err)
+            break;
+        merge_terms = tail;
+    }
+
+
+    if (!err)
+        err = xd3_merger_run(merger);
+
+    if (!err)
+    {
+       ErlNifBinary result;
+       size_t output_size;
+       char* output_data;
+
+       output_size = xd3_merger_get_output_size(merger);
+       output_data = xd3_merger_get_output_data(merger);
+
+       if (!enif_alloc_binary(output_size, &result)) {
+           xd3_merger_clean(merger);
+           return enif_make_binary(env, &result);
+       }
+       memcpy(result.data, output_data, output_size);
+       xd3_merger_clean(merger);
+       return enif_make_binary(env, &result);
+    }
+    else
+    {
+       xd3_merger_clean(merger);
+       return enif_make_badarg(env);
+    }
+}
+
+
 static ERL_NIF_TERM
 xdelta3_merge(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
