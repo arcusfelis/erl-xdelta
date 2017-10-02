@@ -67,9 +67,7 @@ xdelta3_encode(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     uint8_t *from_buf = NULL, *to_buf = NULL, *delta_buf = NULL;
     size_t from_len = 0, to_len, delta_alloc, delta_size = 0;
     int flags;
-    int level;
-    level = 1;
-    flags = ((level << XD3_COMPLEVEL_SHIFT) & XD3_COMPLEVEL_MASK);
+    flags = XD3_NOCOMPRESS;
     from_buf = (uint8_t*) dic.data;
     from_len = (size_t)   dic.size;
 
@@ -174,9 +172,8 @@ ERL_NIF_TERM xd3_merge (ErlNifEnv* env, ERL_NIF_TERM merge_terms)
     if (merge_terms_length < 2)
        return enif_make_badarg(env);
 
-    int level;
-    level = 1;
-    int flags = ((level << XD3_COMPLEVEL_SHIFT) & XD3_COMPLEVEL_MASK);
+    int flags;
+    flags = XD3_NOCOMPRESS;
     merger = xd3_merger_init(flags);
     if (!merger)
        return enif_make_badarg(env);
