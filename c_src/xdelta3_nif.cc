@@ -69,7 +69,7 @@ xdelta3_encode(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     int flags;
     int level;
     level = 1;
-    flags = (level << XD3_COMPLEVEL_SHIFT) & XD3_COMPLEVEL_MASK;
+    flags = ((level << XD3_COMPLEVEL_SHIFT) & XD3_COMPLEVEL_MASK);
     from_buf = (uint8_t*) dic.data;
     from_len = (size_t)   dic.size;
 
@@ -87,8 +87,7 @@ xdelta3_encode(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
                     delta_buf, &delta_size, delta_alloc, flags);
     if (ret != 0) {
       enif_release_binary(&encoded);
-      // xd3_strerror(ret)
-      return (BADARG);
+      return make_error_term(env, ret);
     }
 
     if (!enif_realloc_binary(&encoded, delta_size)) {
@@ -175,7 +174,10 @@ ERL_NIF_TERM xd3_merge (ErlNifEnv* env, ERL_NIF_TERM merge_terms)
     if (merge_terms_length < 2)
        return enif_make_badarg(env);
 
-    merger = xd3_merger_init();
+    int level;
+    level = 1;
+    int flags = ((level << XD3_COMPLEVEL_SHIFT) & XD3_COMPLEVEL_MASK);
+    merger = xd3_merger_init(flags);
     if (!merger)
        return enif_make_badarg(env);
 
