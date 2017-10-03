@@ -32,8 +32,8 @@ else ifeq ($(UNAME_SYS), Linux)
 	CXXFLAGS ?= -O3 -finline-functions -Wall
 endif
 
-CFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
-CXXFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR) -I $(BASEDIR)/xdelta/xdelta3/
+CFLAGS += -g3 -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
+CXXFLAGS += -g3 -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR) -I $(BASEDIR)/xdelta/xdelta3/
 # hacks
 CXXFLAGS += -Wwrite-strings -Wliteral-suffix
 
@@ -81,8 +81,8 @@ $(BASEDIR)/xdelta/xdelta3/build: $(BASEDIR)/xdelta
 	cd $(BASEDIR)/xdelta/xdelta3/ \
 	  && ./configure \
 	  	--disable-dependency-tracking \
-		"CXXFLAGS=-fPIC " \
-		"CFLAGS=-fPIC " \
+		"CXXFLAGS=-g3 -fPIC " \
+		"CFLAGS=-g3 -fPIC " \
 		--enable-static \
 		--disable-shared \
 		--with-liblzma=no \

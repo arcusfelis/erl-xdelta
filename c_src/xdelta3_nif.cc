@@ -46,7 +46,7 @@ extern "C"
 
 #define BADARG             enif_make_badarg(env)
 
-ERL_NIF_TERM make_error_term(ErlNifEnv *env, int ret);
+ERL_NIF_TERM make_error_term(ErlNifEnv *env, int ret, char* extra);
 
 static ERL_NIF_TERM
 xdelta3_encode(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
@@ -79,13 +79,25 @@ xdelta3_encode(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_alloc_binary(delta_alloc, &encoded)) {
         return (BADARG);
     }
-    delta_buf = (uint8_t*) encoded.data;
 
+retry_encode:
+    delta_buf = (uint8_t*) encoded.data;
     int ret = xd3_encode_memory(to_buf, to_len, from_buf, from_len,
                     delta_buf, &delta_size, delta_alloc, flags);
+
+    if (ret == ENOSPC)
+    {
+        delta_alloc *= 2;
+        if (!enif_realloc_binary(&encoded, delta_alloc)) {
+            enif_release_binary(&encoded);
+            return (BADARG);
+        }
+        goto retry_encode;
+    }
+
     if (ret != 0) {
       enif_release_binary(&encoded);
-      return make_error_term(env, ret);
+      return enif_raise_exception(env, make_error_term(env, ret, "encode"));
     }
 
     if (!enif_realloc_binary(&encoded, delta_size)) {
@@ -121,19 +133,32 @@ xdelta3_decode(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     input_buf = (uint8_t*) delta.data;
     input_len = (size_t)   delta.size;
 
-    output_alloc = (input_len + from_len) * 11 / 10 + 10000;
+    // not optimal!
+    output_alloc = 2 * (input_len + from_len) * 11 / 10 + 10000;
 
     if (!enif_alloc_binary(output_alloc, &encoded)) {
         return (BADARG);
     }
-    output_buf = (uint8_t*) encoded.data;
 
+retry_decode:
+	output_buf = (uint8_t*) encoded.data;
     int ret = xd3_decode_memory(input_buf, input_len, from_buf, from_len,
                     output_buf, &output_size, output_alloc, flags);
+
+    if (ret == ENOSPC)
+    {
+        output_alloc *= 2;
+        if (!enif_realloc_binary(&encoded, output_alloc)) {
+            enif_release_binary(&encoded);
+            return (BADARG);
+        }
+        goto retry_decode;
+    }
+
     if (ret != 0) {
       enif_release_binary(&encoded);
 
-      return enif_raise_exception(env, make_error_term(env, ret));
+      return enif_raise_exception(env, make_error_term(env, ret, "decode"));
     }
 
     if (!enif_realloc_binary(&encoded, output_size)) {
@@ -144,19 +169,33 @@ xdelta3_decode(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 }
 
 
-ERL_NIF_TERM make_error_term(ErlNifEnv *env, int ret)
+ERL_NIF_TERM make_error_term(ErlNifEnv *env, int ret, char* extra)
 {
     ErlNifBinary bin;
     const char* err_description = xd3_strerror(ret);
+
+    if (!err_description) {
+        return enif_make_tuple3(env,
+                enif_make_atom(env, "error"),
+                enif_make_atom(env, extra),
+                enif_make_int(env, ret));
+    }
+
     unsigned err_description_length = strlen(err_description);
 
     if (!enif_alloc_binary(err_description_length, &bin)) {
-        return (BADARG);
+        return enif_make_tuple3(env,
+                enif_make_atom(env, "error"),
+                enif_make_atom(env, extra),
+                enif_make_int(env, ret));
     }
 
     memcpy(bin.data, err_description, err_description_length);
 
-    return enif_make_binary(env, &bin);
+    return enif_make_tuple3(env,
+                enif_make_atom(env, "error"),
+                enif_make_atom(env, extra),
+                enif_make_binary(env, &bin));
 }
 
 
