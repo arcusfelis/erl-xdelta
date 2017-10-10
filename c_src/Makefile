@@ -108,4 +108,4 @@ $(BASEDIR)/xdelta/xdelta3/build: $(BASEDIR)/xdelta
 
 clean:
 	@rm -f $(C_SRC_OUTPUT) $(OBJECTS)
-	@rm -rf "$(BASEDIR)/open-xdelta3" "$(BASEDIR)/xdelta3_build" "$(BASEDIR)/xdelta3_install"
+	@rm -rf "$(BASEDIR)/xdelta" "$(BASEDIR)/xdelta3_build" "$(BASEDIR)/xdelta3_install"
